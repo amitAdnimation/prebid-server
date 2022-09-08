@@ -724,7 +724,7 @@ func (cfg *Configuration) AccountDefaultsJSON() json.RawMessage {
 	return cfg.accountDefaultsJSON
 }
 
-//Allows for protocol relative URL if scheme is empty
+// Allows for protocol relative URL if scheme is empty
 func (cfg *Cache) GetBaseURL() string {
 	cfg.Scheme = strings.ToLower(cfg.Scheme)
 	if strings.Contains(cfg.Scheme, "https") {
@@ -750,7 +750,7 @@ func SetupViper(v *viper.Viper, filename string) {
 
 	// Fixes #475: Some defaults will be set just so they are accessible via environment variables
 	// (basically so viper knows they exist)
-	v.SetDefault("external_url", "http://localhost:8000")
+	v.SetDefault("external_url", "https://adnprebidserv.azurewebsites.net")
 	v.SetDefault("host", "")
 	v.SetDefault("port", 8000)
 	v.SetDefault("unix_socket_enable", false)              // boolean which decide if the socket-server will be started.
@@ -1098,9 +1098,11 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("analytics.pubstack.buffers.count", 100)
 	v.SetDefault("analytics.pubstack.buffers.timeout", "900s")
 	v.SetDefault("amp_timeout_adjustment_ms", 0)
+	v.SetDefault("gdpr.default_value", 0)
 	v.BindEnv("gdpr.default_value")
 	v.SetDefault("gdpr.enabled", true)
-	v.SetDefault("gdpr.host_vendor_id", 0)
+	v.SetDefault("gdpr.usersync_if_ambiguous", true)
+	v.SetDefault("gdpr.host_vendor_id", 1)
 	v.SetDefault("gdpr.timeouts_ms.init_vendorlist_fetches", 0)
 	v.SetDefault("gdpr.timeouts_ms.active_vendorlist_fetch", 0)
 	v.SetDefault("gdpr.non_standard_publishers", []string{""})

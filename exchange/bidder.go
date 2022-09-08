@@ -55,7 +55,7 @@ type AdaptedBidder interface {
 	requestBid(ctx context.Context, bidderRequest BidderRequest, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, adsCertSigner adscert.Signer, bidRequestOptions bidRequestOptions, alternateBidderCodes config.AlternateBidderCodes) ([]*pbsOrtbSeatBid, []error)
 }
 
-//bidRequestOptions holds additional options for bid request execution to maintain clean code and reasonable number of parameters
+// bidRequestOptions holds additional options for bid request execution to maintain clean code and reasonable number of parameters
 type bidRequestOptions struct {
 	accountDebugAllowed bool
 	headerDebugAllowed  bool

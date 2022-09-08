@@ -132,8 +132,8 @@ func (s *Syncer) Override(original *Syncer) *Syncer {
 // In most cases, bidders will specify a URL with a `{{.RedirectURL}}` macro for the call back to
 // Prebid Server and a UserMacro which the bidder server will replace with the user's id. Example:
 //
-//  url: "https://sync.bidderserver.com/usersync?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&redirect={{.RedirectURL}}"
-//  userMacro: "$UID"
+//	url: "https://sync.bidderserver.com/usersync?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&redirect={{.RedirectURL}}"
+//	userMacro: "$UID"
 //
 // Prebid Server is configured with a default RedirectURL template matching the /setuid call. This
 // may be overridden for all bidders with the `user_sync.redirect_url` host configuration or for a
