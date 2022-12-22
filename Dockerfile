@@ -30,6 +30,8 @@ RUN chmod a+xr prebid-server
 COPY static static/
 COPY stored_requests/data stored_requests/data
 RUN chmod -R a+r static/ stored_requests/data
+RUN mkdir /logs
+RUN chmod -R 777 /logs
 RUN apt-get update && \
     apt-get install -y ca-certificates mtr && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

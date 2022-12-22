@@ -750,7 +750,7 @@ func SetupViper(v *viper.Viper, filename string) {
 
 	// Fixes #475: Some defaults will be set just so they are accessible via environment variables
 	// (basically so viper knows they exist)
-	v.SetDefault("external_url", "https://adnprebidserv.azurewebsites.net")
+	v.SetDefault("external_url", "https://prebidservernew.azurewebsites.net")
 	v.SetDefault("host", "")
 	v.SetDefault("port", 8000)
 	v.SetDefault("unix_socket_enable", false)              // boolean which decide if the socket-server will be started.
@@ -945,7 +945,7 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("adapters.adyoulike.endpoint", "https://broker.omnitagjs.com/broker/bid?partnerId=19340f4f097d16f41f34fc0274981ca4")
 	v.SetDefault("adapters.aja.endpoint", "https://ad.as.amanad.adtdp.com/v1/bid/4")
 	v.SetDefault("adapters.algorix.endpoint", "https://{{.Host}}.svr-algorix.com/rtb/sa?sid={{.SourceId}}&token={{.AccountID}}")
-	v.SetDefault("adapters.amx.endpoint", "http://pbs.amxrtb.com/auction/openrtb")
+	v.SetDefault("adapters.amx.endpoint", "https://pbs.amxrtb.com/auction/openrtb/YWRuaW1hdGlvbi5jb20") //http://pbs.amxrtb.com/auction/openrtb
 	v.SetDefault("adapters.andbeyondmedia.endpoint", "http://backend.andbeyond.media/pserver")
 	v.SetDefault("adapters.apacdex.endpoint", "http://useast.quantumdex.io/auction/pbs")
 	v.SetDefault("adapters.applogy.endpoint", "http://rtb.applogy.com/v1/prebid")
@@ -1004,6 +1004,7 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("adapters.invibes.endpoint", "https://{{.ZoneID}}.videostep.com/bid/ServerBidAdContent")
 	v.SetDefault("adapters.iqzone.endpoint", "http://smartssp-us-east.iqzone.com/pserver")
 	v.SetDefault("adapters.ix.disabled", true)
+	//v.SetDefault("adapters.ix.endpoint", "https://adnimationltd-us-east.lb.indexww.com")
 	v.SetDefault("adapters.janet.endpoint", "http://ghb.bidder.jmgads.com/pbs/ortb")
 	v.SetDefault("adapters.jixie.endpoint", "https://hb.jixie.io/v2/hbsvrpost")
 	v.SetDefault("adapters.kargo.endpoint", "https://krk.kargo.com/api/v1/openrtb")
@@ -1044,8 +1045,10 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("adapters.rhythmone.endpoint", "http://tag.1rx.io/rmp")
 	v.SetDefault("adapters.richaudience.endpoint", "http://ortb.richaudience.com/ortb/?bidder=pbs")
 	v.SetDefault("adapters.rtbhouse.endpoint", "http://prebidserver-s2s-ams.creativecdn.com/bidder/prebidserver/bids")
-	v.SetDefault("adapters.rubicon.disabled", true)
+	v.SetDefault("adapters.rubicon.disabled", false)
 	v.SetDefault("adapters.rubicon.endpoint", "http://exapi-us-east.rubiconproject.com/a/api/exchange.json")
+	v.SetDefault("adapters.rubicon.xapi.username", "gatechina")
+	v.SetDefault("adapters.rubicon.xapi.password", "EDTDBTEYLX")
 	v.SetDefault("adapters.seedingalliance.endpoint", "http://b.nativendo.de/cds/rtb/bid?ssp=pb")
 	v.SetDefault("adapters.sa_lunamedia.endpoint", "http://balancer.lmgssp.com/pserver")
 	v.SetDefault("adapters.sharethrough.endpoint", "https://btlr.sharethrough.com/universal/v1?supply_id=FGMrCMMc")
@@ -1088,7 +1091,7 @@ func SetupViper(v *viper.Viper, filename string) {
 	v.SetDefault("adapters.zeroclickfraud.endpoint", "http://{{.Host}}/openrtb2?sid={{.SourceId}}")
 
 	v.SetDefault("max_request_size", 1024*256)
-	v.SetDefault("analytics.file.filename", "")
+	v.SetDefault("analytics.file.filename", "/logs/serverLogging")
 	v.SetDefault("analytics.pubstack.endpoint", "https://s2s.pbstck.com/v1")
 	v.SetDefault("analytics.pubstack.scopeid", "change-me")
 	v.SetDefault("analytics.pubstack.enabled", false)
