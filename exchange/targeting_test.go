@@ -12,10 +12,11 @@ import (
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/gdpr"
+	"github.com/prebid/prebid-server/hooks/hookexecution"
 	metricsConfig "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
 
-	"github.com/mxmCherry/openrtb/v16/openrtb2"
+	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -121,6 +122,7 @@ func runTargetingAuction(t *testing.T, mockBids map[openrtb_ext.BidderName][]*op
 		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: req},
 		Account:           config.Account{},
 		UserSyncs:         &emptyUsersync{},
+		HookExecutor:      &hookexecution.EmptyHookExecutor{},
 	}
 
 	debugLog := DebugLog{}
@@ -167,10 +169,16 @@ func buildTargetingExt(includeCache bool, includeWinners bool, includeBidderKeys
 }
 
 func buildParams(t *testing.T, mockBids map[openrtb_ext.BidderName][]*openrtb2.Bid) json.RawMessage {
-	params := make(map[string]json.RawMessage)
+	params := make(map[string]interface{})
+	paramsPrebid := make(map[string]interface{})
+	paramsPrebidBidders := make(map[string]json.RawMessage)
+
 	for bidder := range mockBids {
-		params[string(bidder)] = json.RawMessage(`{"whatever":true}`)
+		paramsPrebidBidders[string(bidder)] = json.RawMessage(`{"whatever":true}`)
 	}
+
+	paramsPrebid["bidder"] = paramsPrebidBidders
+	params["prebid"] = paramsPrebid
 	ext, err := json.Marshal(params)
 	if err != nil {
 		t.Fatalf("Failed to make imp exts: %v", err)

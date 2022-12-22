@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -18,7 +17,8 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/golang/glog"
 	"github.com/julienschmidt/httprouter"
-	"github.com/mxmCherry/openrtb/v16/openrtb2"
+	"github.com/prebid/openrtb/v17/openrtb2"
+	"github.com/prebid/prebid-server/hooks/hookexecution"
 	jsonpatch "gopkg.in/evanphx/json-patch.v4"
 
 	accountService "github.com/prebid/prebid-server/account"
@@ -85,7 +85,8 @@ func NewVideoEndpoint(
 		cache,
 		videoEndpointRegexp,
 		ipValidator,
-		empty_fetcher.EmptyFetcher{}}).VideoAuctionEndpoint), nil
+		empty_fetcher.EmptyFetcher{},
+		&hookexecution.EmptyHookExecutor{}}).VideoAuctionEndpoint), nil
 }
 
 /*
@@ -160,7 +161,7 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 		R: r.Body,
 		N: deps.cfg.MaxRequestSize,
 	}
-	requestJson, err := ioutil.ReadAll(lr)
+	requestJson, err := io.ReadAll(lr)
 	if err != nil {
 		handleError(&labels, w, []error{err}, &vo, &debugLog)
 		return
@@ -246,17 +247,20 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 	bidReq.Imp = imps
 	bidReq.ID = "bid_id" //TODO: look at prebid.js
 
-	// Populate any "missing" OpenRTB fields with info from other sources, (e.g. HTTP request headers).
-	deps.setFieldsImplicitly(r, bidReq) // move after merge
+	// all code after this line should use the bidReqWrapper instead of bidReq directly
+	bidReqWrapper := &openrtb_ext.RequestWrapper{BidRequest: bidReq}
 
-	errL = deps.validateRequest(&openrtb_ext.RequestWrapper{BidRequest: bidReq}, false, false, nil)
+	// Populate any "missing" OpenRTB fields with info from other sources, (e.g. HTTP request headers).
+	deps.setFieldsImplicitly(r, bidReqWrapper)
+
+	errL = deps.validateRequest(bidReqWrapper, false, false, nil)
 	if errortypes.ContainsFatalError(errL) {
 		handleError(&labels, w, errL, &vo, &debugLog)
 		return
 	}
 
 	ctx := context.Background()
-	timeout := deps.cfg.AuctionTimeouts.LimitAuctionTimeout(time.Duration(bidReq.TMax) * time.Millisecond)
+	timeout := deps.cfg.AuctionTimeouts.LimitAuctionTimeout(time.Duration(bidReqWrapper.TMax) * time.Millisecond)
 	if timeout > 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithDeadline(ctx, start.Add(timeout))
@@ -264,17 +268,17 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 	}
 
 	usersyncs := usersync.ParseCookieFromRequest(r, &(deps.cfg.HostCookie))
-	if bidReq.App != nil {
+	if bidReqWrapper.App != nil {
 		labels.Source = metrics.DemandApp
-		labels.PubID = getAccountID(bidReq.App.Publisher)
-	} else { // both bidReq.App == nil and bidReq.Site != nil are true
+		labels.PubID = getAccountID(bidReqWrapper.App.Publisher)
+	} else { // both bidReqWrapper.App == nil and bidReqWrapper.Site != nil are true
 		labels.Source = metrics.DemandWeb
 		if usersyncs.HasAnyLiveSyncs() {
 			labels.CookieFlag = metrics.CookieFlagYes
 		} else {
 			labels.CookieFlag = metrics.CookieFlagNo
 		}
-		labels.PubID = getAccountID(bidReq.Site.Publisher)
+		labels.PubID = getAccountID(bidReqWrapper.Site.Publisher)
 	}
 
 	// Look up account now that we have resolved the pubID value
@@ -287,7 +291,7 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 	secGPC := r.Header.Get("Sec-GPC")
 
 	auctionRequest := exchange.AuctionRequest{
-		BidRequestWrapper:          &openrtb_ext.RequestWrapper{BidRequest: bidReq},
+		BidRequestWrapper:          bidReqWrapper,
 		Account:                    *account,
 		UserSyncs:                  usersyncs,
 		RequestType:                labels.RType,
@@ -295,10 +299,11 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 		LegacyLabels:               labels,
 		GlobalPrivacyControlHeader: secGPC,
 		PubID:                      labels.PubID,
+		HookExecutor:               deps.hookExecutor,
 	}
 
 	response, err := deps.ex.HoldAuction(ctx, auctionRequest, &debugLog)
-	vo.Request = bidReq
+	vo.Request = bidReqWrapper.BidRequest
 	vo.Response = response
 	if err != nil {
 		errL := []error{err}
@@ -373,6 +378,10 @@ func handleError(labels *metrics.Labels, w http.ResponseWriter, errL []error, vo
 		} else if erVal == errortypes.AcctRequiredErrorCode {
 			status = http.StatusBadRequest
 			labels.RequestStatus = metrics.RequestStatusBadInput
+			break
+		} else if erVal == errortypes.MalformedAcctErrorCode {
+			status = http.StatusInternalServerError
+			labels.RequestStatus = metrics.RequestStatusAccountConfigErr
 			break
 		}
 		errors = fmt.Sprintf("%s %s", errors, er.Error())

@@ -3,10 +3,9 @@ package openrtb2
 import (
 	"bytes"
 	"fmt"
-	"github.com/prebid/prebid-server/experiment/adscert"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -15,7 +14,9 @@ import (
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
 	"github.com/prebid/prebid-server/exchange"
+	"github.com/prebid/prebid-server/experiment/adscert"
 	"github.com/prebid/prebid-server/gdpr"
+	"github.com/prebid/prebid-server/hooks"
 	metricsConfig "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"github.com/prebid/prebid-server/stored_requests/backends/empty_fetcher"
@@ -112,6 +113,7 @@ func BenchmarkOpenrtbEndpoint(b *testing.B) {
 		[]byte{},
 		nil,
 		empty_fetcher.EmptyFetcher{},
+		hooks.EmptyPlanBuilder{},
 	)
 
 	b.ResetTimer()
@@ -136,7 +138,7 @@ func BenchmarkValidWholeExemplary(b *testing.B) {
 		b.Run(fmt.Sprintf("input_file_%s", testFile), func(b *testing.B) {
 			b.StopTimer()
 			// Set up
-			fileData, err := ioutil.ReadFile(testFile)
+			fileData, err := os.ReadFile(testFile)
 			if err != nil {
 				b.Fatalf("unable to read file %s", testFile)
 			}
@@ -155,7 +157,7 @@ func BenchmarkValidWholeExemplary(b *testing.B) {
 				AccountRequired:    test.Config.AccountRequired,
 			}
 
-			auctionEndpointHandler, mockBidServers, mockCurrencyRatesServer, err := buildTestEndpoint(test, cfg)
+			auctionEndpointHandler, _, mockBidServers, mockCurrencyRatesServer, err := buildTestEndpoint(test, cfg)
 			if err != nil {
 				b.Fatal(err.Error())
 			}

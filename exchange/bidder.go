@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptrace"
 	"regexp"
@@ -21,9 +21,9 @@ import (
 	"github.com/prebid/prebid-server/experiment/adscert"
 	"github.com/prebid/prebid-server/version"
 
-	nativeRequests "github.com/mxmCherry/openrtb/v16/native1/request"
-	nativeResponse "github.com/mxmCherry/openrtb/v16/native1/response"
-	"github.com/mxmCherry/openrtb/v16/openrtb2"
+	nativeRequests "github.com/prebid/openrtb/v17/native1/request"
+	nativeResponse "github.com/prebid/openrtb/v17/native1/response"
+	"github.com/prebid/openrtb/v17/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
@@ -54,7 +54,7 @@ type AdaptedBidder interface {
 	//
 	// Any errors will be user-facing in the API.
 	// Error messages should help publishers understand what might account for "bad" bids.
-	requestBid(ctx context.Context, bidderRequest BidderRequest, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, adsCertSigner adscert.Signer, bidRequestOptions bidRequestOptions, alternateBidderCodes config.AlternateBidderCodes) ([]*pbsOrtbSeatBid, []error)
+	requestBid(ctx context.Context, bidderRequest BidderRequest, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, adsCertSigner adscert.Signer, bidRequestOptions bidRequestOptions, alternateBidderCodes openrtb_ext.ExtAlternateBidderCodes) ([]*pbsOrtbSeatBid, []error)
 }
 
 // bidRequestOptions holds additional options for bid request execution to maintain clean code and reasonable number of parameters
@@ -154,7 +154,7 @@ type bidderAdapterConfig struct {
 	EndpointCompression string
 }
 
-func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest BidderRequest, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, adsCertSigner adscert.Signer, bidRequestOptions bidRequestOptions, alternateBidderCodes config.AlternateBidderCodes) ([]*pbsOrtbSeatBid, []error) {
+func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest BidderRequest, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, adsCertSigner adscert.Signer, bidRequestOptions bidRequestOptions, alternateBidderCodes openrtb_ext.ExtAlternateBidderCodes) ([]*pbsOrtbSeatBid, []error) {
 
 	var reqData []*adapters.RequestData
 	var errs []error
@@ -362,7 +362,7 @@ func (bidder *bidderAdapter) requestBid(ctx context.Context, bidderRequest Bidde
 							// Initalize seatBidMap entry as this is first extra bid with seat bidderName
 							seatBidMap[bidderName] = &pbsOrtbSeatBid{
 								bids:     make([]*pbsOrtbBid, 0, dataLen),
-								currency: defaultCurrency,
+								currency: seatBidMap[bidderRequest.BidderName].currency,
 								// Do we need to fill httpCalls for this?. Can we refer one from adaptercode for debugging?
 								httpCalls: seatBidMap[bidderRequest.BidderName].httpCalls,
 								seat:      bidderName.String(),
@@ -561,7 +561,7 @@ func (bidder *bidderAdapter) doRequestImpl(ctx context.Context, req *adapters.Re
 		}
 	}
 
-	respBody, err := ioutil.ReadAll(httpResp.Body)
+	respBody, err := io.ReadAll(httpResp.Body)
 	if err != nil {
 		return &httpCallInfo{
 			request: req,
